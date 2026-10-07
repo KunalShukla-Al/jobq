@@ -1,0 +1,14 @@
+ 575 LWLock:BufferContent
+ 404 Lock:transactionid
+ 243 CPU:-
+ 169 LWLock:WALWrite
+ 156 Client:ClientRead
+  35 LWLock:LockManager
+  31 IO:WalWrite
+  21 LWLock:WALInsert
+  12 Timeout:VacuumDelay
+   6 LWLock:ProcArray
+   1 Timeout:SpinDelay
+   1 LWLock:XactSLRU
+   1 IO:DataFileWrite
+   1 IO:BuffileWrite
