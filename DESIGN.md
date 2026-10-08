@@ -1,6 +1,6 @@
 # jobq: a Postgres-backed job queue in Go
 
-**Status:** weeks 1–3 built (queue, workers, API, tests, metrics, dashboard, load test); week 4 code done (web push, drain mode on GitHub Actions, cleanup). Not delivering yet: the AcadKit rollout is in shadow mode, not switched on, and there's no release yet · **Author:** Kunal Shukla · **Date:** 2 Oct 2026 · **Planned build:** 13 Oct – 9 Nov 2026 (the code was finished early, 2–5 Oct)
+**Status:** weeks 1–3 built (queue, workers, API, tests, metrics, dashboard, load test); week 4 code done (web push, drain mode on GitHub Actions, cleanup). Not delivering yet: the AcadKit rollout is in shadow mode, not switched on, and there's no release yet · **Date:** 2 Oct 2026 · **Planned build:** 13 Oct – 9 Nov 2026 (the code was finished early, 2–5 Oct)
 
 ## Why
 
