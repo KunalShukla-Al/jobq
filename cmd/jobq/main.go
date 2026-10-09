@@ -300,7 +300,7 @@ func drain(log *slog.Logger) error {
 }
 
 // cleanup deletes done jobs older than keep; dead ones stay.
-func cleanup(ctx context.Context, log *slog.Logger, store *queue.Store, keep time.Duration) {
+func cleanup(ctx context.Context, log *slog.Logger, store queue.Backend, keep time.Duration) {
 	n, err := store.DeleteDone(ctx, keep, 1000)
 	switch {
 	case err != nil && ctx.Err() == nil:
@@ -311,19 +311,13 @@ func cleanup(ctx context.Context, log *slog.Logger, store *queue.Store, keep tim
 }
 
 // left logs what a drain leaves for the next run.
-func left(ctx context.Context, log *slog.Logger, store *queue.Store) {
-	var due, later, running, dead int
-	err := store.Pool.QueryRow(ctx, `
-		select count(*) filter (where status = 'ready' and run_at <= now()),
-		       count(*) filter (where status = 'ready' and run_at > now()),
-		       count(*) filter (where status = 'running'),
-		       count(*) filter (where status = 'dead')
-		from jobq.jobs`).Scan(&due, &later, &running, &dead)
+func left(ctx context.Context, log *slog.Logger, store queue.Backend) {
+	c, err := store.Counts(ctx)
 	if err != nil {
 		log.Warn("counting what's left failed", "err", err)
 		return
 	}
-	log.Info("left in the queue", "due", due, "later", later, "running", running, "dead", dead)
+	log.Info("left in the queue", "due", c.Due, "later", c.Later, "running", c.Running, "dead", c.Dead)
 }
 
 func envString(key, def string) string {

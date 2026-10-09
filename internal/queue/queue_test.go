@@ -366,3 +366,35 @@ func TestNoNotificationsUnlessAskedFor(t *testing.T) {
 		t.Fatal("notified with Notify off")
 	}
 }
+
+func TestCountsSeeEveryState(t *testing.T) {
+	s := newStore(t)
+	for _, k := range []string{"a", "b", "c", "d", "e"} {
+		enqueue(t, s, queue.NewJob{Kind: "noop", IdempotencyKey: k})
+	}
+	enqueue(t, s, queue.NewJob{Kind: "noop", IdempotencyKey: "later", RunAt: time.Now().Add(time.Hour)})
+	jobs, _ := s.Claim(ctx, 3, time.Minute, noopOnly)
+	if err := s.Complete(ctx, jobs[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Kill(ctx, jobs[1], errors.New("gone")); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(20 * time.Millisecond) // so the two still-due jobs have a measurable wait
+	c, err := s.Counts(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := queue.Counts{Due: 2, Later: 1, Running: 1, Done: 1, Dead: 1}
+	got := c
+	got.OldestDue = 0
+	if got != want {
+		t.Fatalf("counts = %+v, want %+v", c, want)
+	}
+	if c.OldestDue <= 0 || c.OldestDue > time.Minute {
+		t.Fatalf("oldest due = %v, want a small positive wait", c.OldestDue)
+	}
+	if err := s.Ping(ctx); err != nil {
+		t.Fatal(err)
+	}
+}

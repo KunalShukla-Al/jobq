@@ -16,7 +16,7 @@ import (
 
 // Server serves the API.
 type Server struct {
-	Store  *queue.Store
+	Store  queue.Backend
 	Secret string          // required as "Authorization: Bearer <secret>"
 	Kinds  map[string]bool // job kinds that may be enqueued
 	// Metrics, when set, counts new jobs and is served at /metrics. Like
@@ -118,7 +118,7 @@ func (s *Server) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
-	if err := s.Store.Pool.Ping(r.Context()); err != nil {
+	if err := s.Store.Ping(r.Context()); err != nil {
 		writeError(w, http.StatusServiceUnavailable, "database unreachable")
 		return
 	}

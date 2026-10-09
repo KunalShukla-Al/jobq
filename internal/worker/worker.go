@@ -51,7 +51,7 @@ type Config struct {
 	Backoff     queue.Backoff // between retries (2s doubling to 10m)
 	Logger      *slog.Logger
 	Metrics     *metrics.Metrics // nil: no metrics
-	// Wake, when set, cuts an idle wait short (see queue.Store.Listen), but
+	// Wake, when set, cuts an idle wait short (see queue.Backend.Listen), but
 	// not the backoff after a failed claim. Polling continues regardless:
 	// it's what finds retries coming due.
 	Wake <-chan struct{}
@@ -91,7 +91,7 @@ func (c *Config) defaults() {
 
 // Pool claims jobs and runs them.
 type Pool struct {
-	store    *queue.Store
+	store    queue.Backend
 	handlers map[string]Handler
 	kinds    []string // the handlers' kinds: the only ones claimed
 	cfg      Config
@@ -99,7 +99,7 @@ type Pool struct {
 
 // New makes a pool for these handlers, by job kind. It claims only jobs of
 // these kinds.
-func New(store *queue.Store, handlers map[string]Handler, cfg Config) *Pool {
+func New(store queue.Backend, handlers map[string]Handler, cfg Config) *Pool {
 	cfg.defaults()
 	kinds := make([]string, 0, len(handlers))
 	for k := range handlers {
