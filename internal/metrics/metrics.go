@@ -43,7 +43,7 @@ type Metrics struct {
 
 // New registers jobq's metrics, plus Go runtime and process metrics. The
 // store is read at scrape time for queue depth and lag.
-func New(store *queue.Store) *Metrics {
+func New(store queue.Backend) *Metrics {
 	m := &Metrics{
 		Registry: prometheus.NewRegistry(),
 		enqueued: prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -135,9 +135,9 @@ func (m *Metrics) LeaseLost() {
 	}
 }
 
-// queueCollector reads the queue's state from Postgres on each scrape.
+// queueCollector reads the queue's state from the backend on each scrape.
 type queueCollector struct {
-	store *queue.Store
+	store queue.Backend
 }
 
 var (
@@ -157,41 +157,23 @@ func (c *queueCollector) Collect(ch chan<- prometheus.Metric) {
 	defer cancel()
 
 	// Every status is reported, at 0 when empty, so graphs don't have gaps.
-	// Counting done jobs scans them all; fine at load-test sizes, and the
-	// thing to change (a cleanup job, or an estimate) if the table grows large.
-	depth := map[string]float64{queue.Ready: 0, queue.Running: 0, queue.Done: 0, queue.Dead: 0}
-	rows, err := c.store.Pool.Query(ctx, `select status, count(*) from jobq.jobs group by status`)
-	if err == nil {
-		for rows.Next() {
-			var status string
-			var n int64
-			if err = rows.Scan(&status, &n); err != nil {
-				break
-			}
-			depth[status] = float64(n)
-		}
-		rows.Close()
-		if err == nil {
-			err = rows.Err()
-		}
-	}
+	// Due = ready and run_at has passed. A job waiting out a retry delay
+	// isn't late, so it doesn't count toward the oldest age.
+	counts, err := c.store.Counts(ctx)
 	if err != nil {
 		ch <- prometheus.NewInvalidMetric(depthDesc, err)
-	} else {
-		for status, n := range depth {
-			ch <- prometheus.MustNewConstMetric(depthDesc, prometheus.GaugeValue, n, status)
-		}
-	}
-
-	// Due = ready and run_at has passed. A job waiting out a retry delay
-	// isn't late, so it doesn't count.
-	var age float64
-	err = c.store.Pool.QueryRow(ctx, `
-		select coalesce(extract(epoch from now() - min(run_at)), 0)::float8
-		from jobq.jobs where status = 'ready' and run_at <= now()`).Scan(&age)
-	if err != nil {
 		ch <- prometheus.NewInvalidMetric(oldestDesc, err)
 		return
 	}
+	depth := map[string]float64{
+		queue.Ready:   float64(counts.Due + counts.Later),
+		queue.Running: float64(counts.Running),
+		queue.Done:    float64(counts.Done),
+		queue.Dead:    float64(counts.Dead),
+	}
+	for status, n := range depth {
+		ch <- prometheus.MustNewConstMetric(depthDesc, prometheus.GaugeValue, n, status)
+	}
+	age := counts.OldestDue.Seconds()
 	ch <- prometheus.MustNewConstMetric(oldestDesc, prometheus.GaugeValue, age)
 }
