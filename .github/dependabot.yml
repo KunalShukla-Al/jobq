@@ -1,0 +1,24 @@
+# Dependency update PRs. Each one runs through CI (gofmt, vet and the
+# integration tests against Postgres) before it can be merged.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # Minor and patch bumps arrive as one PR a week; majors come one PR each.
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

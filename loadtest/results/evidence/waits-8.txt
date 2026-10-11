@@ -1,0 +1,13 @@
+1366 Lock:transactionid
+ 533 LWLock:BufferContent
+ 453 CPU:-
+ 213 LWLock:WALWrite
+ 183 Client:ClientRead
+ 133 LWLock:LockManager
+  34 IO:WalWrite
+   9 LWLock:WALInsert
+   4 LWLock:ProcArray
+   2 IPC:MessageQueueSend
+   1 LWLock:XidGen
+   1 LWLock:XactSLRU
+   1 IO:BuffileWrite

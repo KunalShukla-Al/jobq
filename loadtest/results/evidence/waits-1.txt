@@ -1,0 +1,9 @@
+ 675 LWLock:BufferContent
+ 232 LWLock:WALWrite
+ 217 CPU:-
+ 113 Client:ClientRead
+  39 IO:WalWrite
+   3 LWLock:WALInsert
+   2 LWLock:ProcArray
+   1 LWLock:XidGen
+   1 IO:DataFileWrite

@@ -1,0 +1,7 @@
+# Scrapes a local jobq every 5s.  prometheus --config.file=deploy/prometheus.yml
+global:
+  scrape_interval: 5s
+scrape_configs:
+  - job_name: jobq
+    static_configs:
+      - targets: ["localhost:8080"]

@@ -1,0 +1,54 @@
+name: Deliver
+
+# jobq in production: run the jobs that are due, then exit ("jobq drain").
+# AcadKit's send-reminders starts it (workflow_dispatch) right after it
+# queues work. The schedule is a backup: GitHub starts scheduled runs late
+# when it's busy, may drop them, and turns the schedule off after 60 days
+# without activity in the repo: see "Run it in production on GitHub
+# Actions" in the README.
+#
+# Minutes 2, 7, 12 … rather than 0, 5, 10 …: GitHub is busiest at the top of
+# the hour, and the first "*/5" schedule never fired once in two hours.
+on:
+  schedule:
+    - cron: "2-59/5 * * * *"
+  workflow_dispatch:
+
+# One drain at a time; a run that's due while one is going waits, not cancels.
+concurrency:
+  group: deliver
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.JOBQ_DATABASE_URL }}
+      VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+      VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+      VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+    steps:
+      # Safe to merge before the secrets exist: until then every run stops here, green.
+      - name: Check the secrets are set
+        id: check
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::JOBQ_DATABASE_URL isn't set, so there's no queue to drain. Add the repository secrets (README) to start delivering."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.check.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      - if: steps.check.outputs.ready == 'true'
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Drain the queue
+        if: steps.check.outputs.ready == 'true'
+        run: go run ./cmd/jobq drain
