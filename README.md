@@ -448,11 +448,7 @@ Covered:
 
 CI runs the same suite against Postgres 17 and fails if any integration test skips.
 
-## How I built this
-
-I built this with heavy help from an AI coding assistant (Claude Code). I chose what to build and the trade-offs, ran the experiments, and checked the results; the assistant wrote much of the code and docs.
-
-In my own words, the design choices I'd defend:
+## Design choices I'd defend
 
 **Why `SKIP LOCKED` instead of locking the whole table?** Because I have multiple workers doing jobs at the
 same time. If I lock the whole table, one worker could block all the other workers. `SKIP LOCKED` lets a worker

@@ -1,13 +1,17 @@
 # Dependency update PRs. Each one runs through CI (gofmt, vet and the
 # integration tests against Postgres) before it can be merged.
+#
+# Paused while the repo rests (open-pull-requests-limit: 0 stops version-update
+# PRs). Raise the limits again to bring them back.
 version: 2
 updates:
   - package-ecosystem: gomod
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 0
     groups:
-      # Minor and patch bumps arrive as one PR a week; majors come one PR each.
+      # Minor and patch bumps arrive as one PR; majors come one PR each.
       minor-and-patch:
         update-types: [minor, patch]
     commit-message:
@@ -16,7 +20,8 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 0
     groups:
       actions:
         patterns: ["*"]
