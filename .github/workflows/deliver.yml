@@ -5,7 +5,9 @@ name: Deliver
 # queues work. The schedule is a backup: GitHub starts scheduled runs late
 # when it's busy, may drop them, and turns the schedule off after 60 days
 # without activity in the repo: see "Run it in production on GitHub
-# Actions" in the README.
+# Actions" in the README. A repo restored after deletion has no schedule
+# either, and turning the workflow off and on doesn't bring it back; a
+# push that changes this file does.
 #
 # Minutes 2, 7, 12 … rather than 0, 5, 10 …: GitHub is busiest at the top of
 # the hour, and the first "*/5" schedule never fired once in two hours.
